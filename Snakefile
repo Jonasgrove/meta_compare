@@ -174,9 +174,7 @@ rule metaspades:
         r2 = expand(output_dir + "/samtools_1/{samp}/sho/unmapped_{samp}_sho_R2.fastq", samp=SAMPLE),
     output:
         vDir  = directory(output_dir + "/metaspades_out/{samp}_sho"),
-        scaf=output_dir + "/metaspades_out/{samp}_sho/scaffolds.fasta",
-        r1=output_dir + "/metaspades_out/{samp}_sho/corrected/R1.fastq", 
-        r2=output_dir + "/metaspades_out/{samp}_sho/corrected/R2.fastq"
+        scaf=output_dir + "/metaspades_out/{samp}_sho/scaffolds.fasta"
 
     conda:
         "envs/env_1.yaml"
@@ -219,8 +217,8 @@ rule maxbin2:
     """
     input:
         contigs = expand(output_dir + "/metaspades_out/{samp}_sho/scaffolds.fasta", samp=SAMPLE),
-        r1 = expand(output_dir + "/metaspades_out/{samp}_sho/corrected/R1.fastq", samp=SAMPLE),
-        r2 = expand(output_dir + "/metaspades_out/{samp}_sho/corrected/R2.fastq", samp=SAMPLE),
+        r1 = expand(output_dir + "/samtools_1/{samp}/hic/unmapped_{samp}_hic_R1.fastq", samp=SAMPLE),
+        r2 = expand(output_dir + "/samtools_1/{samp}/hic/unmapped_{samp}_hic_R2.fastq", samp=SAMPLE),
     output:
         vOut = directory(output_dir + "/maxbin2_out/{samp}_sho/"), ## Defined only
         scaf = output_dir + "/maxbin2_out/{samp}_sho/scaffolds.fasta"
@@ -250,8 +248,8 @@ rule align_assembly_sho:
     """
     input:
         vRef     = expand(output_dir + "/metaspades_out/{samp}_sho/scaffolds.fasta", samp=SAMPLE),
-        vR1_sho = expand(output_dir + "/metaspades_out/{samp}_sho/corrected/R1.fastq", samp=SAMPLE),
-        vR2_sho = expand(output_dir + "/metaspades_out/{samp}_sho/corrected/R2.fastq", samp=SAMPLE),
+        vR1_sho = expand(output_dir + "/samtools_1/{samp}/hic/unmapped_{samp}_hic_R1.fastq", samp=SAMPLE),
+        vR2_sho = expand(output_dir + "/samtools_1/{samp}/hic/unmapped_{samp}_hic_R1.fastq", samp=SAMPLE),
     output:
         vDir_index     = directory(output_dir + "/mapping_out/index/{samp}_sho/"),
         vIndex         =           output_dir + "/mapping_out/index/{samp}_sho/scaffolds.fasta",
