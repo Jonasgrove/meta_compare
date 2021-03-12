@@ -1,3 +1,0 @@
-ValueError in line 7 of /Users/jonasgrove/Projects/pond_crashers/meta_compare/Snakefile:
-invalid literal for int() with base 10: ''
-  File "/Users/jonasgrove/Projects/pond_crashers/meta_compare/Snakefile", line 7, in <module>
