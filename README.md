@@ -39,3 +39,7 @@ Options:
 • Snakemake
 
 The yaml files inside the `envs` directory included in this repository will create multiple virtual environments required by the pipeline.
+
+## Contributors
+
+Jonas Grove, Sam Koehler, Nikki Szczepanski
