@@ -1,6 +1,6 @@
 # Meta Compare
 
-The **Meta Compare** pipeline is based in Snakemake and analyzes a multi-sample metagenomic dataset of both Hi-C and shotgun reads, ultimately calculating the percentage abundances of species present in each sample.
+The **Meta Compare** pipeline is based in Snakemake and analyzes a multi-sample metagenomic dataset of both Hi-C and shotgun reads, ultimately calculating the percentage abundances of species present in each sample. **Note: certain aspects still in development.**
 
 ## More information
 
