@@ -37,5 +37,6 @@ while getopts s:i:o:t:g:O:R:h flag; do
 done
 
 
-SAMPLES=$sample_names INPUT=$input_directory OUTPUT=$output_directory THREADS=$threads OMIT=$omit_genome REF=$reference_genome GTDBTK_REF=$gtdbtk_ref snakemake # --cores $4 --use-conda
+
+SAMPLES=$sample_names INPUT=$input_directory OUTPUT=$output_directory THREADS=$threads OMIT=$omit_genome REF=$reference_genome GTDBTK_REF=$gtdbtk_ref snakemake --cores $threads --use-conda #--dag | dot -Tsvg > dag.svg # -n # --cores $4 --use-conda
 

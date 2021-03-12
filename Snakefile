@@ -1,11 +1,11 @@
 import os
 
 # retrieve environment variables
-SAMPLE     = os.environ["SAMPLES"].split()
+SAMPLE     = os.environ["SAMPLES"].split(",")
 input_dir  = os.environ["INPUT"]
 output_dir = os.environ["OUTPUT"]
 threads    = int(os.environ["THREADS"])
-omit       = bool(os.environ["OMIT"])
+omit       = os.environ["OMIT"]
 reference  = os.environ["REF"]
 gtdbtk_data= os.environ["GTDBTK_REF"]
 
@@ -52,7 +52,7 @@ rule fastp:
         """
 
 # GENOME FILTERING
-if omit == True:
+if omit == "True":
     '''
     If there is one known species in the metagenomic samples that is in high abundance
     it can be filtered out using BWA alignment and filtering
@@ -86,35 +86,58 @@ if omit == True:
 
             ## Align Data: Shotgun
             /usr/bin/time -v bwa mem -t {threads} {input.ref} {input.sho_r1} {input.sho_r2} | \
-            /usr/bin/time -v samtools view -@ {threads} -S -b - | \
-            /usr/bin/time -v samtools view -@ {threads} -b -f 4 - | \
-            /usr/bin/time -v samtools sort -@ {threads} -n - | \
-            /usr/bin/time -v samtools fastq -@ {threads} -1 {output.sho_r1} -2 {output.sho_r2} -0 /dev/null -s /dev/null -n -
+            /usr/bin/time -v samtools view -@ {threads} -S -b | \
+            /usr/bin/time -v samtools view -@ {threads} -b -f 4 | \
+            /usr/bin/time -v samtools sort -@ {threads} -n | \
+            /usr/bin/time -v samtools fastq -@ {threads} -1 {output.sho_r1} -2 {output.sho_r2} -0 /dev/null -s /dev/null -n
             
             ## Align Data: Hi-C
             /usr/bin/time -v bwa mem -5SP -t {threads} {input.ref} {input.hic_r1} {input.hic_r2} | \
-            /usr/bin/time -v samtools view -@ {threads} -S -b - | \
-            /usr/bin/time -v samtools view -@ {threads} -b -f 4 - | \
-            /usr/bin/time -v samtools sort -@ {threads} -n - | \
-            /usr/bin/time -v samtools fastq -@ {threads} -1 {output.hic_r1} -2 {output.hic_r2} -0 /dev/null -s /dev/null -n -
+            /usr/bin/time -v samtools view -@ {threads} -S -b  \
+            /usr/bin/time -v samtools view -@ {threads} -b -f 4 | \
+            /usr/bin/time -v samtools sort -@ {threads} -n | \
+            /usr/bin/time -v samtools fastq -@ {threads} -1 {output.hic_r1} -2 {output.hic_r2} -0 /dev/null -s /dev/null -n
             """
         
 
 else:
-    '''
-    if filtering is not required for this application
-    the fasp processed files will be used for the subsequent analysis
-    '''
-    rule copy_fastq:
-        input:
-            ## Shotgun
-            sho_r1 = expand(output_dir + "/fastp/{samp}/sho/{samp}_sho_R1.fastq", samp=SAMPLE),
-            sho_r2 = expand(output_dir + "/fastp/{samp}/sho/{samp}_sho_R2.fastq", samp=SAMPLE),
-            ## Hi-C
-            hic_r1 = expand(output_dir + "/fastp/{samp}/hic/{samp}_hic_R1.fastq", samp=SAMPLE),
-            hic_r2 = expand(output_dir + "/fastp/{samp}/hic/{samp}_hic_R2.fastq", samp=SAMPLE),
+
+    rule make_dirs:
         output:
+            output_dir + "/burn.txt"
+        params:
+            # main dir
+            main = output_dir + "/samtools_1",
+
             # sho
+            samp = expand(output_dir + "/samtools_1/{samp}", samp = SAMPLE),
+
+            # sho
+            samp_sho = expand(output_dir + "/samtools_1/{samp}/sho", samp = SAMPLE),
+
+            # hic
+            samp_hic = expand(output_dir + "/samtools_1/{samp}/hic", samp = SAMPLE)
+
+        shell:
+            '''
+            touch {output}
+            mkdir {params.main}
+            mkdir {params.samp}
+            mkdir {params.samp_sho}
+            mkdir {params.samp_hic}
+            '''
+        
+    rule movefiles:
+        input:
+            burn = output_dir + "/burn.txt",
+            ## Shotgun
+            sho_r1 = output_dir + "/fastp/{samp}/sho/{samp}_sho_R1.fastq",
+            sho_r2 = output_dir + "/fastp/{samp}/sho/{samp}_sho_R2.fastq",
+            ## Hi-C
+            hic_r1 = output_dir + "/fastp/{samp}/hic/{samp}_hic_R1.fastq",
+            hic_r2 = output_dir + "/fastp/{samp}/hic/{samp}_hic_R2.fastq"
+        output:
+            # sho 
             sho_r1 = output_dir + "/samtools_1/{samp}/sho/unmapped_{samp}_sho_R1.fastq",
             sho_r2 = output_dir + "/samtools_1/{samp}/sho/unmapped_{samp}_sho_R2.fastq",
             ## Hi-C
@@ -124,10 +147,10 @@ else:
             threads
         shell:
             '''
-            cp input.sho_r1 output.sho_r1
-            cp input.sho_r2 output.sho_r2
-            cp input.hic_r1 output.hic_r1
-            cp input.hic_r2 output.hic_r2
+            mv -T {input.sho_r1} {output.sho_r1}
+            mv -T {input.sho_r2} {output.sho_r2}
+            mv -T {input.hic_r1} {output.hic_r1}
+            mv -T {input.hic_r2} {output.hic_r2}
             '''
 
 
@@ -151,10 +174,10 @@ rule metaspades:
         r2 = expand(output_dir + "/samtools_1/{samp}/sho/unmapped_{samp}_sho_R2.fastq", samp=SAMPLE),
     output:
         vDir  = directory(output_dir + "/metaspades_out/{samp}_sho"),
-        vFile = output_dir + "/metaspades_out/{samp}_sho/scaffolds.fasta",
-        vR1 = output_dir + "/metaspades_out/{samp}_sho/corrected/R1.fastq",
-        vR2 = output_dir + "/metaspades_out/{samp}_sho/corrected/R2.fastq",
-        vCorDir = directory(output_dir + "/metaspades_out/{samp}_sho/corrected/"),
+        scaf=output_dir + "/metaspades_out/{samp}_sho/scaffolds.fasta",
+        r1=output_dir + "/metaspades_out/{samp}_sho/corrected/R1.fastq", 
+        r2=output_dir + "/metaspades_out/{samp}_sho/corrected/R2.fastq"
+
     conda:
         "envs/env_1.yaml"
     threads:
@@ -162,15 +185,11 @@ rule metaspades:
     shell:
         """
         /usr/bin/time -v spades.py --meta \
-        -k 21,33,55,77,99,127 \
+        -k 21,33,55 \
         --threads {threads} \
         -1 {input.r1} \
         -2 {input.r2} \
         -o {output.vDir}
-
-        ## Rename Corrected Read Files
-        mv {output.vCorDir}*R1*.fastq {output.vCorDir}R1.fastq
-        mv {output.vCorDir}*R2*.fastq {output.vCorDir}R2.fastq
         """
 
 ## 02 - Assembly, QUAST
@@ -204,6 +223,7 @@ rule maxbin2:
         r2 = expand(output_dir + "/metaspades_out/{samp}_sho/corrected/R2.fastq", samp=SAMPLE),
     output:
         vOut = directory(output_dir + "/maxbin2_out/{samp}_sho/"), ## Defined only
+        scaf = output_dir + "/maxbin2_out/{samp}_sho/scaffolds.fasta"
     conda:
         "envs/env_1.yaml"
     threads:
@@ -491,3 +511,4 @@ rule checkm:
             {input.vBins} \
             {output.vDir}
         """
+
